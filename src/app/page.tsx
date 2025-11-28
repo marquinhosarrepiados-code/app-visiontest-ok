@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Eye, User, BarChart3, Settings, Moon, Sun, Share2, AlertTriangle, Palette, Download, TrendingUp, Phone, MapPin, Clock, CheckCircle, XCircle, Activity, Shield, Users, Target, Award } from 'lucide-react'
+import { Eye, User, BarChart3, Settings, Moon, Sun, Share2, AlertTriangle, Palette, Download, TrendingUp, Phone, MapPin, Clock, CheckCircle, XCircle, Activity, Shield, Users, Target, Award, CreditCard, Lock } from 'lucide-react'
+import Link from 'next/link'
 
 // Firebase Mock (substituir por configuração real)
 const mockFirestore = {
@@ -30,6 +31,7 @@ interface UserProfile {
   visualDifficulties: string[]
   healthHistory: string[]
   createdAt?: Date
+  hasPaid?: boolean
 }
 
 interface TestResult {
@@ -292,9 +294,142 @@ function UserRegistration({ onComplete }: { onComplete: (profile: UserProfile) =
             type="submit"
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800"
           >
-            Começar Testes Gratuitos
+            Continuar para Pagamento
           </button>
         </form>
+      </div>
+    </div>
+  )
+}
+
+// Componente de Pagamento
+function PaymentScreen({ userProfile, onPaymentComplete }: { userProfile: UserProfile, onPaymentComplete: () => void }) {
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handlePayment = async () => {
+    setIsProcessing(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/create-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: userProfile.id || Date.now().toString(),
+          userName: userProfile.name
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao criar pagamento')
+      }
+
+      const data = await response.json()
+      
+      // Redirecionar para o Mercado Pago
+      window.location.href = data.initPoint
+    } catch (err) {
+      console.error('Erro ao processar pagamento:', err)
+      setError('Erro ao processar pagamento. Tente novamente.')
+      setIsProcessing(false)
+    }
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto p-4 sm:p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-700 overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-8 text-center">
+          <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
+            <CreditCard className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-3xl font-bold text-white mb-2">Acesso Completo</h2>
+          <p className="text-emerald-100">Libere todos os testes de visão</p>
+        </div>
+
+        <div className="p-8">
+          {/* Informações do Usuário */}
+          <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-slate-700 dark:to-slate-600 rounded-2xl p-6 mb-8 border border-gray-200 dark:border-slate-600">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Seus Dados</h3>
+            <div className="space-y-2 text-gray-700 dark:text-gray-300">
+              <p><strong>Nome:</strong> {userProfile.name}</p>
+              <p><strong>Idade:</strong> {userProfile.age} anos</p>
+              <p><strong>Cidade:</strong> {userProfile.city}</p>
+            </div>
+          </div>
+
+          {/* Detalhes do Produto */}
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-2 border-emerald-200 dark:border-emerald-800 rounded-2xl p-6 mb-8">
+            <h3 className="text-xl font-bold text-emerald-800 dark:text-emerald-200 mb-4">
+              VisioTest+ - Acesso Completo
+            </h3>
+            <ul className="space-y-3 text-emerald-700 dark:text-emerald-300 mb-6">
+              <li className="flex items-start">
+                <CheckCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
+                <span>9 testes de acuidade visual diferentes</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
+                <span>Teste de sensibilidade ao contraste</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
+                <span>Teste de percepção de cores</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
+                <span>Resultados detalhados e personalizados</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
+                <span>Recomendações de saúde visual</span>
+              </li>
+            </ul>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-emerald-800 dark:text-emerald-200">
+                R$ 15,00
+              </div>
+              <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">
+                Pagamento único - Acesso imediato
+              </p>
+            </div>
+          </div>
+
+          {/* Erro */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-2xl p-4 mb-6">
+              <p className="text-red-800 dark:text-red-200 text-center">{error}</p>
+            </div>
+          )}
+
+          {/* Botão de Pagamento */}
+          <button
+            onClick={handlePayment}
+            disabled={isProcessing}
+            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-3"
+          >
+            {isProcessing ? (
+              <>
+                <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Processando...</span>
+              </>
+            ) : (
+              <>
+                <CreditCard className="w-6 h-6" />
+                <span>Pagar com Mercado Pago</span>
+              </>
+            )}
+          </button>
+
+          {/* Segurança */}
+          <div className="mt-6 flex items-center justify-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+            <Lock className="w-4 h-4" />
+            <span>Pagamento 100% seguro via Mercado Pago</span>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -1360,10 +1495,11 @@ function Results({ profile, results, onRestart }: {
 // Componente Principal
 export default function VisioTestApp() {
   const [darkMode, setDarkMode] = useState(false)
-  const [currentStep, setCurrentStep] = useState<'welcome' | 'register' | 'test-menu' | 'acuity-selector' | 'acuity-test' | 'contrast' | 'colors' | 'results'>('welcome')
+  const [currentStep, setCurrentStep] = useState<'welcome' | 'register' | 'payment' | 'test-menu' | 'acuity-selector' | 'acuity-test' | 'contrast' | 'colors' | 'results'>('welcome')
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [testResults, setTestResults] = useState<TestResult[]>([])
   const [selectedAcuityTest, setSelectedAcuityTest] = useState<string>('')
+  const [hasPaid, setHasPaid] = useState(false)
 
   useEffect(() => {
     if (darkMode) {
@@ -1373,8 +1509,26 @@ export default function VisioTestApp() {
     }
   }, [darkMode])
 
+  useEffect(() => {
+    // Verificar se o usuário já pagou
+    const paymentStatus = localStorage.getItem('visiotest_payment_status')
+    if (paymentStatus === 'approved') {
+      setHasPaid(true)
+    }
+  }, [])
+
   const handleRegistrationComplete = (profile: UserProfile) => {
     setUserProfile(profile)
+    // Se já pagou, vai direto para os testes
+    if (hasPaid) {
+      setCurrentStep('test-menu')
+    } else {
+      setCurrentStep('payment')
+    }
+  }
+
+  const handlePaymentComplete = () => {
+    setHasPaid(true)
     setCurrentStep('test-menu')
   }
 
@@ -1425,16 +1579,18 @@ export default function VisioTestApp() {
                   VisioTest+
                 </h1>
               </div>
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-3 rounded-2xl bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                {darkMode ? (
-                  <Sun className="w-6 h-6 text-amber-500" />
-                ) : (
-                  <Moon className="w-6 h-6 text-slate-600" />
-                )}
-              </button>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="p-3 rounded-2xl bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  {darkMode ? (
+                    <Sun className="w-6 h-6 text-amber-500" />
+                  ) : (
+                    <Moon className="w-6 h-6 text-slate-600" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -1478,20 +1634,24 @@ export default function VisioTestApp() {
               </div>
               <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-2 border-emerald-200 dark:border-emerald-800 rounded-2xl p-6 mb-12 max-w-md mx-auto">
                 <p className="text-emerald-800 dark:text-emerald-200 font-bold text-lg">
-                  🎉 Acesso GRATUITO completo aos testes
+                  💳 Acesso completo por apenas R$ 15,00
                 </p>
               </div>
               <button
                 onClick={() => setCurrentStep('register')}
                 className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white font-bold py-6 px-12 rounded-3xl text-xl transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:scale-105 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800"
               >
-                Começar Testes
+                Começar Agora
               </button>
             </div>
           )}
 
           {currentStep === 'register' && (
             <UserRegistration onComplete={handleRegistrationComplete} />
+          )}
+
+          {currentStep === 'payment' && userProfile && (
+            <PaymentScreen userProfile={userProfile} onPaymentComplete={handlePaymentComplete} />
           )}
 
           {currentStep === 'test-menu' && (

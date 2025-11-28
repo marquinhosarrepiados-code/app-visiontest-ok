@@ -35,6 +35,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <Script 
+          src="https://sdk.mercadopago.com/js/v2" 
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
